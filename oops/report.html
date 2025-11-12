@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Road Safety Logger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f7f7f7;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: black;
+            padding: 15px 0;
+            text-align: center;
+        }
+        nav a {
+            color: #FFD500;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 8px;
+            border: 2px solid #FFD500;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        nav a:hover, nav a.active {
+            background: #FFD500;
+            color: black;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .report-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #000;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #000;
+            color: #FFD500;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            border: 2px solid #FFD500;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #FFD500;
+            color: #000;
+        }
+
+        .btn-group {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .report-output {
+            background: #fff8cc;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 5px solid #FFD500;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            display: none;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="add.html">Add Violation</a>
+        <a href="view.html">View Data</a>
+        <a href="search.html">Search</a>
+        <a href="charts.html">Analytics</a>
+        <a href="report.html" class="active">Reports</a>
+        <a href="#" onclick="logout()" style="background: #000; color: #FFD500;">Logout</a>
+    </nav>
+
+    <div class="container">
+        <div class="report-card">
+            <h2>📄 Violation Reports</h2>
+
+            <div class="btn-group">
+                <button class="btn" onclick="generateReport()">📊 Generate Report</button>
+                <button class="btn" onclick="downloadText()">📥 Download TXT</button>
+                <button class="btn" onclick="printReport()">🖨️ Print Report</button>
+            </div>
+
+            <div id="reportOutput" class="report-output"></div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        if (localStorage.getItem('rsl_logged_in') !== 'true') {
+            alert('Please login first');
+            window.location.href = 'login.html';
+        }
+
+        const KEY = "violations";
+        let currentReport = "";
+
+        function generateReport() {
+            const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+            const output = document.getElementById('reportOutput');
+            
+            if (data.length === 0) {
+                output.textContent = "No data available for report generation.";
+                output.style.display = 'block';
+                return;
+            }
+
+            const total = data.length;
+            
+            // Count by type
+            const typeCount = {};
+            data.forEach(record => {
+                typeCount[record.type] = (typeCount[record.type] || 0) + 1;
+            });
+
+            // Count by location
+            const locationCount = {};
+            data.forEach(record => {
+                locationCount[record.location] = (locationCount[record.location] || 0) + 1;
+            });
+
+            // Find most common
+            const mostCommonType = Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0];
+            const mostCommonLocation = Object.entries(locationCount).sort((a, b) => b[1] - a[1])[0];
+
+            // Generate report text
+            currentReport = `ROAD SAFETY VIOLATION REPORT
+===============================
+
+SUMMARY STATISTICS
+------------------
+Total Violations: ${total}
+Most Common Violation: ${mostCommonType ? mostCommonType[0] + ' (' + mostCommonType[1] + ' cases)' : 'N/A'}
+Most Frequent Location: ${mostCommonLocation ? mostCommonLocation[0] + ' (' + mostCommonLocation[1] + ' cases)' : 'N/A'}
+
+VIOLATIONS BY TYPE
+------------------\n`;
+
+            Object.entries(typeCount).forEach(([type, count]) => {
+                currentReport += `${type}: ${count} cases\n`;
+            });
+
+            currentReport += "\nTOP LOCATIONS\n-------------\n";
+            const topLocations = Object.entries(locationCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            topLocations.forEach(([location, count]) => {
+                currentReport += `${location}: ${count} cases\n`;
+            });
+
+            currentReport += `\nReport Generated: ${new Date().toLocaleString()}
+Generated by: Road Safety Logger System`;
+
+            output.textContent = currentReport;
+            output.style.display = 'block';
+        }
+
+        function downloadText() {
+            if (!currentReport) {
+                alert("Please generate a report first");
+                return;
+            }
+
+            const blob = new Blob([currentReport], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `violation_report_${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function printReport() {
+            if (!currentReport) {
+                alert("Please generate a report first");
+                return;
+            }
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Violation Report</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; }
+                            pre { white-space: pre-wrap; font-size: 14px; }
+                            .header { text-align: center; margin-bottom: 30px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>Road Safety Violation Report</h1>
+                            <p>Generated on: ${new Date().toLocaleString()}</p>
+                        </div>
+                        <pre>${currentReport}</pre>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('rsl_logged_in');
+                localStorage.removeItem('rsl_current_user');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>

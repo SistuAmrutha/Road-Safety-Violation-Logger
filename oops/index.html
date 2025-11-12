@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Road Safety Logger</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FFD500;
+            --primary-dark: #e6bf00;
+            --secondary: #1a1a1a;
+            --accent: #0056b3;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Page Transition Animations */
+        .page-enter {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+
+        .page-enter-active {
+            opacity: 1;
+            transform: translateX(0);
+            transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .page-exit {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .page-exit-active {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--secondary);
+            padding: 15px 0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        nav a {
+            color: var(--primary);
+            text-decoration: none;
+            padding: 12px 20px;
+            margin: 0 5px;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        nav a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 213, 0, 0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        nav a:hover::before {
+            left: 100%;
+        }
+
+        nav a:hover, nav a.active {
+            background: var(--primary);
+            color: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 213, 0, 0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--secondary) 0%, #333 100%);
+            color: white;
+            padding: 50px 40px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        .welcome-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,213,0,0.1)"/></svg>');
+            background-size: cover;
+        }
+
+        .welcome-banner h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            position: relative;
+            animation: typewriter 2s steps(40) 1s both;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        @keyframes typewriter {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        .welcome-banner p {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 1.5s forwards;
+            position: relative;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+
+        /* User Info */
+        .user-info {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+            border-left: 5px solid var(--primary);
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        .user-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            text-align: center;
+        }
+
+        .user-info-item {
+            padding: 20px;
+            background: var(--light);
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .user-info-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .user-info-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .user-info-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            background: var(--primary);
+            color: var(--secondary);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Statistics */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--primary);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            animation: bounceIn 0.8s ease-out;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 213, 0, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .stat-card h3 {
+            font-size: 2.5rem;
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Dashboard Cards */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-top: 4px solid var(--primary);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            animation: slideInBottom 0.6s ease-out;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 213, 0, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .card:hover::before {
+            left: 100%;
+        }
+
+        @keyframes slideInBottom {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .card h3 {
+            color: var(--dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+            position: relative;
+        }
+
+        .card h3::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s ease-in-out;
+        }
+
+        .card:hover h3::after {
+            width: 100%;
+        }
+
+        .card p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--secondary);
+            color: var(--primary);
+            padding: 12px 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: 2px solid var(--primary);
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 213, 0, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            background: var(--primary);
+            color: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 213, 0, 0.3);
+        }
+
+        /* Recent Activity */
+        .recent-activity {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-top: 40px;
+            animation: slideInRight 0.8s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .recent-activity h3 {
+            color: var(--dark);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+        }
+
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .activity-table th {
+            background: var(--primary);
+            color: var(--secondary);
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .activity-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
+        }
+
+        .activity-table tr:hover {
+            background: #fff8cc;
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+        }
+
+        .violation-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .badge-helmet { background: var(--danger); }
+        .badge-signal { background: var(--warning); color: black; }
+        .badge-speeding { background: var(--info); }
+        .badge-route { background: #6f42c1; }
+        .badge-seatbelt { background: #e83e8c; }
+
+        /* FIXED Traffic Light Animation - MOVED DOWN */
+        .traffic-light {
+            position: fixed;
+            top: 80px; /* MOVED DOWN from 20px to 80px */
+            right: 20px;
+            width: 60px;
+            height: 180px;
+            background: #333;
+            border-radius: 30px;
+            padding: 10px;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .light {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            opacity: 0.3;
+            transition: all 0.5s ease;
+        }
+
+        .red { background: #ff4444; }
+        .yellow { background: var(--primary); }
+        .green { background: #44ff44; }
+
+        /* JavaScript controlled animation */
+        .traffic-light.active .red { 
+            opacity: 1; 
+            box-shadow: 0 0 20px #ff4444, 0 0 30px #ff4444;
+        }
+        .traffic-light.active .yellow { 
+            opacity: 0.3; 
+            box-shadow: none;
+        }
+        .traffic-light.active .green { 
+            opacity: 0.3; 
+            box-shadow: none;
+        }
+
+        .traffic-light.warning .red { 
+            opacity: 0.3; 
+            box-shadow: none;
+        }
+        .traffic-light.warning .yellow { 
+            opacity: 1; 
+            box-shadow: 0 0 20px var(--primary), 0 0 30px var(--primary);
+        }
+        .traffic-light.warning .green { 
+            opacity: 0.3; 
+            box-shadow: none;
+        }
+
+        .traffic-light.go .red { 
+            opacity: 0.3; 
+            box-shadow: none;
+        }
+        .traffic-light.go .yellow { 
+            opacity: 0.3; 
+            box-shadow: none;
+        }
+        .traffic-light.go .green { 
+            opacity: 1; 
+            box-shadow: 0 0 20px #44ff44, 0 0 30px #44ff44;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary), #ff6b00);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(255, 213, 0, 0.4);
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: bounceIn 1s ease-out 1s both;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 15px 35px rgba(255, 213, 0, 0.6);
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .dashboard {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .welcome-banner h1 {
+                font-size: 2rem;
+            }
+            
+            .welcome-banner p {
+                font-size: 1.1rem;
+            }
+            
+            .user-info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            nav a {
+                padding: 10px 15px;
+                font-size: 14px;
+                margin: 2px;
+            }
+            
+            .traffic-light {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .welcome-banner {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body class="page-enter-active">
+    <!-- FIXED Traffic Light - MOVED DOWN -->
+    <div class="traffic-light active" id="trafficLight">
+        <div class="light red"></div>
+        <div class="light yellow"></div>
+        <div class="light green"></div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab" onclick="navigateTo('add.html')">
+        ➕
+    </div>
+
+    <!-- Navigation - UPDATED WITH CORRECT VIEW DATA LINK -->
+    <nav>
+        <a href="index.html" class="active">🏠 Home</a>
+        <a href="add.html">➕ Add Violation</a>
+        <a href="view.html">📋 View Data</a> <!-- Fixed link -->
+        <a href="search.html">🔍 Search</a>
+        <a href="charts.html">📊 Analytics</a>
+        <a href="report.html">📄 Reports</a>
+        <a href="#" onclick="logout()" style="background: var(--secondary); color: var(--primary);">
+            🚪 Logout
+        </a>
+    </nav>
+
+    <div class="container">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h1>Road Safety Violation Management System</h1>
+            <p>A professional digital platform for recording, tracking, and analyzing traffic violations</p>
+            <a href="add.html" class="btn" style="background: var(--primary); color: var(--secondary); border-color: var(--primary);">
+                <span>➕</span>
+                Record New Violation
+            </a>
+        </div>
+
+        <!-- User Information -->
+        <div class="user-info">
+            <div class="user-info-grid">
+                <div class="user-info-item">
+                    <div class="user-info-label">👮 Officer Name</div>
+                    <div class="user-info-value" id="displayOfficerName">Loading...</div>
+                </div>
+                <div class="user-info-item">
+                    <div class="user-info-label">🎫 Badge Number</div>
+                    <div class="user-info-value" id="displayBadgeNumber">Loading...</div>
+                </div>
+                <div class="user-info-item">
+                    <div class="user-info-label">⚡ Role</div>
+                    <div class="user-info-value" id="displayRole">Loading...</div>
+                    <div class="role-badge" id="roleBadge">OFFICER</div>
+                </div>
+                <div class="user-info-item">
+                    <div class="user-info-label">📅 Last Login</div>
+                    <div class="user-info-value" id="displayLastLogin">Loading...</div>
+                </div>
+                <div class="user-info-item">
+                    <div class="user-info-label">🔢 Login Count</div>
+                    <div class="user-info-value" id="displayLoginCount">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon">🚨</div>
+                <h3 id="totalViolations">0</h3>
+                <p>Total Violations</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🛵</div>
+                <h3 id="noHelmetCount">0</h3>
+                <p>No Helmet Cases</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🚦</div>
+                <h3 id="signalJumpCount">0</h3>
+                <p>Signal Jump Cases</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💨</div>
+                <h3 id="speedingCount">0</h3>
+                <p>Speeding Cases</p>
+            </div>
+        </div>
+
+        <!-- Dashboard Cards -->
+        <div class="dashboard">
+            <div class="card">
+                <h3>➕ Add Violation</h3>
+                <p>Quickly record a new traffic violation with detailed information, evidence photos, and officer details. Capture all necessary information in a streamlined interface.</p>
+                <a href="add.html" class="btn" onclick="navigateTo('add.html', event)">
+                    <span>➕</span>
+                    Add New Violation
+                </a>
+            </div>
+            
+            <div class="card">
+                <h3>📋 View & Manage</h3>
+                <p>Browse all recorded violations, edit details, delete entries, or export data with complete audit trail. Advanced filtering and sorting options available.</p>
+                <a href="view.html" class="btn" onclick="navigateTo('view.html', event)">
+                    <span>👁️</span>
+                    View All Records
+                </a>
+            </div>
+            
+            <div class="card">
+                <h3>🔍 Search Records</h3>
+                <p>Find specific violations by vehicle number, violation type, date range, or location with advanced filters. Quick search with real-time results.</p>
+                <a href="search.html" class="btn" onclick="navigateTo('search.html', event)">
+                    <span>🔍</span>
+                    Search Database
+                </a>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Analytics</h3>
+                <p>Visualize violation trends with interactive charts, location heatmaps, and time-based analysis. Generate insights from your violation data.</p>
+                <a href="charts.html" class="btn" onclick="navigateTo('charts.html', event)">
+                    <span>📈</span>
+                    View Analytics
+                </a>
+            </div>
+            
+            <div class="card">
+                <h3>📄 Reports</h3>
+                <p>Generate comprehensive reports, export to multiple formats, and print official violation summaries. Customizable report templates available.</p>
+                <a href="report.html" class="btn" onclick="navigateTo('report.html', event)">
+                    <span>📑</span>
+                    Generate Reports
+                </a>
+            </div>
+
+            <div class="card">
+                <h3>⚙️ System Info</h3>
+                <p>View system statistics, data management options, and application configuration settings. Monitor system health and performance metrics.</p>
+                <a href="#" class="btn" onclick="showSystemInfo()">
+                    <span>⚙️</span>
+                    System Information
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="recent-activity">
+            <h3>📋 Recent Violations</h3>
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Vehicle</th>
+                        <th>Location</th>
+                        <th>Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody id="recentViolations">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                            <div class="loading-spinner"></div>
+                            <p style="margin-top: 15px;">Loading recent violations...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        if (localStorage.getItem('rsl_logged_in') !== 'true') {
+            alert('Please login first');
+            window.location.href = 'login.html';
+        }
+
+        // Traffic Light Animation Controller
+        function startTrafficLight() {
+            const trafficLight = document.getElementById('trafficLight');
+            let state = 'active'; // active (red), warning (yellow), go (green)
+            
+            setInterval(() => {
+                trafficLight.classList.remove('active', 'warning', 'go');
+                
+                switch(state) {
+                    case 'active':
+                        trafficLight.classList.add('active');
+                        state = 'warning';
+                        break;
+                    case 'warning':
+                        trafficLight.classList.add('warning');
+                        state = 'go';
+                        break;
+                    case 'go':
+                        trafficLight.classList.add('go');
+                        state = 'active';
+                        break;
+                }
+            }, 2000); // Change every 2 seconds
+        }
+
+        // Page Transition Manager
+        const PageTransitions = {
+            navigateTo: function(url, event = null) {
+                if (event) event.preventDefault();
+                
+                // Add exit animation to current page
+                document.body.classList.remove('page-enter-active');
+                document.body.classList.add('page-exit-active');
+                
+                // Wait for animation to complete then navigate
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 600);
+            },
+            
+            showLoading: function(message = 'Loading...') {
+                const loadingHTML = `
+                    <div id="globalLoading" style="
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.9);
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        z-index: 9999;
+                        color: white;
+                        font-family: 'Segoe UI', Arial, sans-serif;
+                    ">
+                        <div class="loading-spinner"></div>
+                        <p style="margin-top: 20px; font-size: 18px; color: #FFD500;">${message}</p>
+                        <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">Road Safety Logger</p>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', loadingHTML);
+            },
+            
+            hideLoading: function() {
+                const loading = document.getElementById('globalLoading');
+                if (loading) {
+                    loading.style.opacity = '0';
+                    setTimeout(() => loading.remove(), 500);
+                }
+            }
+        };
+
+        // Enhanced navigation function
+        function navigateTo(url, event) {
+            PageTransitions.showLoading('Navigating...');
+            setTimeout(() => {
+                PageTransitions.navigateTo(url, event);
+            }, 800);
+        }
+
+        // Load user information
+        function loadUserInfo() {
+            const currentUser = JSON.parse(localStorage.getItem('rsl_current_user') || '{}');
+            
+            document.getElementById('displayOfficerName').textContent = currentUser.officerName || 'Officer';
+            document.getElementById('displayBadgeNumber').textContent = currentUser.badgeNumber || 'N/A';
+            
+            const roleDisplay = getRoleDisplayName(currentUser.role);
+            document.getElementById('displayRole').textContent = roleDisplay;
+            document.getElementById('roleBadge').textContent = roleDisplay.toUpperCase();
+            
+            document.getElementById('displayLastLogin').textContent = currentUser.lastLogin ? 
+                new Date(currentUser.lastLogin).toLocaleString() : 'First login';
+                
+            document.getElementById('displayLoginCount').textContent = currentUser.loginCount || '1';
+        }
+
+        // Convert role code to display name
+        function getRoleDisplayName(role) {
+            const roleNames = {
+                'traffic_officer': 'Traffic Officer',
+                'senior_officer': 'Senior Officer',
+                'supervisor': 'Supervisor',
+                'admin': 'Administrator'
+            };
+            return roleNames[role] || role || 'Traffic Officer';
+        }
+
+        // Load and display statistics
+        function loadStats() {
+            const data = JSON.parse(localStorage.getItem('violations') || '[]');
+            
+            // Animate counting up
+            animateValue('totalViolations', 0, data.length, 1000);
+            animateValue('noHelmetCount', 0, data.filter(v => v.type === 'No Helmet').length, 1000);
+            animateValue('signalJumpCount', 0, data.filter(v => v.type === 'Signal Jump').length, 1000);
+            animateValue('speedingCount', 0, data.filter(v => v.type === 'Speeding').length, 1000);
+        }
+
+        // Animate number counting
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Load recent violations
+        function loadRecentViolations() {
+            const data = JSON.parse(localStorage.getItem('violations') || '[]');
+            const recentContainer = document.getElementById('recentViolations');
+            
+            if (data.length === 0) {
+                recentContainer.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                            <div style="font-size: 48px; margin-bottom: 20px;">📝</div>
+                            <h3>No violations recorded yet</h3>
+                            <p style="color: #666; margin: 10px 0;">Start by adding your first violation</p>
+                            <button class="btn" onclick="navigateTo('add.html')" 
+                                    style="margin-top: 15px; background: var(--primary); color: var(--secondary);">
+                                ➕ Add First Violation
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Get last 5 violations
+            const recentViolations = data.slice(-5).reverse();
+            recentContainer.innerHTML = '';
+
+            recentViolations.forEach((violation, index) => {
+                setTimeout(() => {
+                    const row = document.createElement('tr');
+                    row.style.animation = `slideInRight 0.5s ease-out ${index * 0.1}s both`;
+                    
+                    // Determine badge class based on violation type
+                    let badgeClass = 'violation-badge ';
+                    if (violation.type === 'No Helmet') badgeClass += 'badge-helmet';
+                    else if (violation.type === 'Signal Jump') badgeClass += 'badge-signal';
+                    else if (violation.type === 'Speeding') badgeClass += 'badge-speeding';
+                    else if (violation.type === 'Wrong Route') badgeClass += 'badge-route';
+                    else if (violation.type === 'No Seatbelt') badgeClass += 'badge-seatbelt';
+                    else badgeClass += 'badge-signal';
+                    
+                    row.innerHTML = `
+                        <td><strong>${violation.id}</strong></td>
+                        <td>${violation.date}</td>
+                        <td><span class="${badgeClass}">${violation.type}</span></td>
+                        <td><strong>${violation.vehicle}</strong></td>
+                        <td>${violation.location}</td>
+                        <td>${violation.recordedBy || 'Officer'}</td>
+                    `;
+                    
+                    recentContainer.appendChild(row);
+                }, index * 100);
+            });
+        }
+
+        // Show system information
+        function showSystemInfo() {
+            const data = JSON.parse(localStorage.getItem('violations') || '[]');
+            const users = JSON.parse(localStorage.getItem('rsl_users') || '[]');
+            const currentUser = JSON.parse(localStorage.getItem('rsl_current_user') || '{}');
+            
+            const info = `
+🚦 System Information:
+------------------
+• Total Violations: ${data.length}
+• Registered Officers: ${users.length}
+• Current Officer: ${currentUser.officerName || 'N/A'}
+• Badge Number: ${currentUser.badgeNumber || 'N/A'}
+• Role: ${getRoleDisplayName(currentUser.role)}
+• Last Login: ${currentUser.lastLogin ? new Date(currentUser.lastLogin).toLocaleString() : 'N/A'}
+• Browser: ${navigator.userAgent.split(') ')[0].split(' (')[1] || 'Unknown'}
+• Screen: ${screen.width}x${screen.height}
+• System: Road Safety Logger v2.0
+            `;
+            
+            // Create a beautiful modal
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 30px;
+                    border-radius: 15px;
+                    max-width: 500px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    animation: bounceIn 0.6s ease-out;
+                ">
+                    <h3 style="color: #000; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <span>⚙️</span> System Information
+                    </h3>
+                    <pre style="text-align: left; background: #f8f9fa; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; white-space: pre-wrap;">${info}</pre>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: var(--primary);
+                        color: var(--secondary);
+                        border: none;
+                        padding: 12px 25px;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        margin-top: 20px;
+                        transition: all 0.3s ease;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        Close
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        // Enhanced logout with animation
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                PageTransitions.showLoading('Logging out...');
+                setTimeout(() => {
+                    localStorage.removeItem('rsl_logged_in');
+                    localStorage.removeItem('rsl_current_user');
+                    PageTransitions.navigateTo('login.html');
+                }, 1000);
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start traffic light animation
+            startTrafficLight();
+            
+            loadUserInfo();
+            loadStats();
+            loadRecentViolations();
+            
+            // Update page title with officer name
+            const currentUser = JSON.parse(localStorage.getItem('rsl_current_user') || '{}');
+            if (currentUser.officerName) {
+                document.title = `Dashboard - ${currentUser.officerName} - Road Safety Logger`;
+            }
+            
+            // Add hover effects to all buttons
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => {
+                btn.style.position = 'relative';
+                btn.style.overflow = 'hidden';
+            });
+        });
+    </script>
+</body>
+</html>

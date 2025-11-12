@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    image: oops-backend:dev
+    container_name: oops-backend-dev
+    environment:
+      # default profile uses embedded H2 database so no external DB is required
+      - SPRING_PROFILES_ACTIVE=
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

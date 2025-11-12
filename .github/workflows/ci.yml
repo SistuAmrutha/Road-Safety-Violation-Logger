@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  compose-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Cache Maven local repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
+
+      - name: Run Maven tests
+        run: mvn -B -V test
+
+      - name: Build and start services with docker-compose
+        run: |
+          docker compose up --build -d
+
+      - name: Wait for MySQL to be ready
+        run: |
+          # Wait for MySQL (listen on 3306) to accept connections
+          for i in $(seq 1 60); do
+            if docker exec $(docker ps -qf "name=oops-mysql") mysqladmin ping -h localhost -uroot -pchangeme --silent >/dev/null 2>&1; then
+              echo "MySQL is ready"; break
+            fi
+            echo "Waiting for MySQL... ($i/60)"
+            sleep 2
+          done
+
+      - name: Wait for app to be ready
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sSf http://localhost:8080/api/reports >/dev/null 2>&1; then
+              echo "App is ready"; break
+            fi
+            echo "Waiting for app... ($i/60)"
+            sleep 2
+          done
+
+      - name: Smoke test /api/reports
+        run: |
+          echo "Calling /api/reports"
+          curl -sSf http://localhost:8080/api/reports
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          echo "---- app logs ----"
+          docker compose logs app || true
+          echo "---- mysql logs ----"
+          docker compose logs mysql || true
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v

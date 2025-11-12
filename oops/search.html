@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search - Road Safety Logger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f7f7f7;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: black;
+            padding: 15px 0;
+            text-align: center;
+        }
+        nav a {
+            color: #FFD500;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 8px;
+            border: 2px solid #FFD500;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        nav a:hover, nav a.active {
+            background: #FFD500;
+            color: black;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .search-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            border-color: #FFD500;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 213, 0, 0.2);
+        }
+
+        .btn {
+            display: inline-block;
+            background: #000;
+            color: #FFD500;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            border: 2px solid #FFD500;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 16px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: #FFD500;
+            color: #000;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .results-table th {
+            background: #FFD500;
+            color: black;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .results-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .results-table tr:hover {
+            background: #fff8cc;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="add.html">Add Violation</a>
+        <a href="view.html">View Data</a>
+        <a href="search.html" class="active">Search</a>
+        <a href="charts.html">Analytics</a>
+        <a href="report.html">Reports</a>
+        <a href="#" onclick="logout()" style="background: #000; color: #FFD500;">Logout</a>
+    </nav>
+
+    <div class="container">
+        <div class="search-card">
+            <h2>🔍 Search Violations</h2>
+
+            <div class="form-group">
+                <label for="vehicle">Vehicle Number</label>
+                <input type="text" id="vehicle" placeholder="TS09AB1234">
+            </div>
+
+            <div class="form-group">
+                <label for="type">Violation Type</label>
+                <select id="type">
+                    <option value="">Any Type</option>
+                    <option>No Helmet</option>
+                    <option>Signal Jump</option>
+                    <option>Wrong Route</option>
+                    <option>Speeding</option>
+                    <option>No Seatbelt</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="searchData()">🔍 Search Violations</button>
+        </div>
+
+        <div id="searchResults"></div>
+    </div>
+
+    <script>
+        // Check authentication
+        if (localStorage.getItem('rsl_logged_in') !== 'true') {
+            alert('Please login first');
+            window.location.href = 'login.html';
+        }
+
+        const KEY = "violations";
+
+        function searchData() {
+            const vehicle = document.getElementById('vehicle').value.toLowerCase().trim();
+            const type = document.getElementById('type').value;
+            const resultsDiv = document.getElementById('searchResults');
+
+            const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+            
+            const filtered = data.filter(record => {
+                const matchVehicle = vehicle ? record.vehicle.toLowerCase().includes(vehicle) : true;
+                const matchType = type ? record.type === type : true;
+                return matchVehicle && matchType;
+            });
+
+            displayResults(filtered);
+        }
+
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div class="no-results">
+                        ❗ No matching records found
+                    </div>
+                `;
+                return;
+            }
+
+            let tableHTML = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Vehicle</th>
+                            <th>Location</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            results.forEach(record => {
+                tableHTML += `
+                    <tr>
+                        <td>${record.id}</td>
+                        <td>${record.date}</td>
+                        <td>${record.type}</td>
+                        <td>${record.vehicle}</td>
+                        <td>${record.location}</td>
+                        <td>${record.remarks || ''}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+            resultsDiv.innerHTML = tableHTML;
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('rsl_logged_in');
+                localStorage.removeItem('rsl_current_user');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Allow Enter key to search
+        document.getElementById('vehicle').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchData();
+            }
+        });
+    </script>
+</body>
+</html>

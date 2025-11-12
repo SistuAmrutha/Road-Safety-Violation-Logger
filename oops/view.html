@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Data - Road Safety Logger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f7f7f7;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: black;
+            padding: 15px 0;
+            text-align: center;
+        }
+        nav a {
+            color: #FFD500;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 8px;
+            border: 2px solid #FFD500;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        nav a:hover, nav a.active {
+            background: #FFD500;
+            color: black;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .data-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #000;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-top: 3px solid #FFD500;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .data-table th {
+            background: #FFD500;
+            color: black;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table tr:hover {
+            background: #fff8cc;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #000;
+            color: #FFD500;
+            padding: 8px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 2px solid #FFD500;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+            margin: 2px;
+        }
+
+        .btn:hover {
+            background: #FFD500;
+            color: #000;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            border-color: #bd2130;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .data-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">🏠 Home</a>
+        <a href="add.html">➕ Add Violation</a>
+        <a href="view.html" class="active">📋 View Data</a>
+        <a href="search.html">🔍 Search</a>
+        <a href="charts.html">📊 Analytics</a>
+        <a href="report.html">📄 Reports</a>
+        <a href="#" onclick="logout()" style="background: #000; color: #FFD500;">🚪 Logout</a>
+    </nav>
+
+    <div class="container">
+        <div class="data-card">
+            <h2>📋 All Violation Records</h2>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-number" id="totalRecords">0</div>
+                    <div class="stat-label">Total Records</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="todayRecords">0</div>
+                    <div class="stat-label">Today's Records</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="withEvidence">0</div>
+                    <div class="stat-label">With Evidence</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="uniqueVehicles">0</div>
+                    <div class="stat-label">Unique Vehicles</div>
+                </div>
+            </div>
+
+            <div id="dataContent">
+                <!-- Data will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        if (localStorage.getItem('rsl_logged_in') !== 'true') {
+            alert('Please login first');
+            window.location.href = 'login.html';
+        }
+
+        const KEY = "violations";
+
+        function loadData() {
+            const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+            const contentDiv = document.getElementById('dataContent');
+            
+            // Update statistics
+            updateStatistics(data);
+            
+            if (data.length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="no-data">
+                        <div class="no-data-icon">📝</div>
+                        <h3>No violation records found</h3>
+                        <p style="margin: 15px 0; color: #666;">Start by adding your first violation record</p>
+                        <a href="add.html" class="btn" style="background: #FFD500; color: #000; border-color: #FFD500;">
+                            ➕ Add First Violation
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by date (newest first)
+            const sortedData = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            let tableHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Vehicle</th>
+                            <th>Location</th>
+                            <th>Officer</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sortedData.forEach((record, index) => {
+                tableHTML += `
+                    <tr>
+                        <td><strong>${record.id}</strong></td>
+                        <td>${record.date}</td>
+                        <td>
+                            <span style="
+                                padding: 4px 8px;
+                                border-radius: 4px;
+                                font-size: 12px;
+                                font-weight: 600;
+                                background: ${getViolationColor(record.type)};
+                                color: white;
+                            ">${record.type}</span>
+                        </td>
+                        <td><strong>${record.vehicle}</strong></td>
+                        <td>${record.location}</td>
+                        <td>${record.recordedBy || 'Officer'}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn" onclick="viewDetails('${record.id}')">
+                                    👁️ View
+                                </button>
+                                <button class="btn btn-danger" onclick="deleteRecord('${record.id}')">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+            contentDiv.innerHTML = tableHTML;
+        }
+
+        function getViolationColor(type) {
+            const colors = {
+                'No Helmet': '#dc3545',
+                'Signal Jump': '#ffc107',
+                'Speeding': '#fd7e14',
+                'Wrong Route': '#6f42c1',
+                'No Seatbelt': '#e83e8c',
+                'Overloading': '#20c997',
+                'Wrong Parking': '#6610f2'
+            };
+            return colors[type] || '#6c757d';
+        }
+
+        function updateStatistics(data) {
+            const total = data.length;
+            const today = new Date().toISOString().split('T')[0];
+            const todayCount = data.filter(r => r.date === today).length;
+            const withEvidence = data.filter(r => r.fileData).length;
+            const uniqueVehicles = new Set(data.map(r => r.vehicle)).size;
+
+            document.getElementById('totalRecords').textContent = total;
+            document.getElementById('todayRecords').textContent = todayCount;
+            document.getElementById('withEvidence').textContent = withEvidence;
+            document.getElementById('uniqueVehicles').textContent = uniqueVehicles;
+        }
+
+        function viewDetails(recordId) {
+            const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+            const record = data.find(r => r.id === recordId);
+            
+            if (record) {
+                const details = `
+Record ID: ${record.id}
+Date: ${record.date}
+Violation Type: ${record.type}
+Vehicle Number: ${record.vehicle}
+Location: ${record.location}
+Remarks: ${record.remarks || 'No remarks'}
+Recorded By: ${record.recordedBy}
+Badge Number: ${record.badgeNumber}
+Evidence: ${record.fileName ? 'Yes (' + record.fileName + ')' : 'No'}
+                `;
+                alert(details);
+            }
+        }
+
+        function deleteRecord(recordId) {
+            if (confirm('Are you sure you want to delete this record? This action cannot be undone.')) {
+                const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+                const filteredData = data.filter(r => r.id !== recordId);
+                localStorage.setItem(KEY, JSON.stringify(filteredData));
+                loadData(); // Reload the data
+                
+                // Show success message
+                showMessage('Record deleted successfully', 'success');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 1000;
+                background: ${type === 'success' ? '#28a745' : '#dc3545'};
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            `;
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('rsl_logged_in');
+                localStorage.removeItem('rsl_current_user');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Road Safety Logger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #000 0%, #333 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: #FFD500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .login-body {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            border-color: #FFD500;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 213, 0, 0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #000 0%, #333 100%);
+            color: #FFD500;
+            border: 2px solid #FFD500;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.4s ease;
+        }
+
+        .login-btn:hover {
+            background: #FFD500;
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        .demo-credentials {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+            font-size: 14px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #f5c6cb;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 480px) {
+            .login-body {
+                padding: 30px 20px;
+            }
+            .login-header {
+                padding: 30px 20px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <span>🚦</span>
+                    <span>RoadSafety Logger</span>
+                </div>
+                <p>Professional Traffic Violation Management System</p>
+            </div>
+            
+            <div class="login-body">
+                <h2 style="text-align: center; margin-bottom: 10px; color: #333;">Officer Login</h2>
+                <p style="text-align: center; color: #666; margin-bottom: 30px;">Local login for officers — offline only</p>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <div class="form-group">
+                    <label for="officerName">Officer Name</label>
+                    <input type="text" id="officerName" placeholder="Enter your full name" value="John Smith">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="badgeNumber">Badge Number</label>
+                        <input type="text" id="badgeNumber" placeholder="Badge number" value="TRF001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select id="role">
+                            <option value="traffic_officer">Traffic Officer</option>
+                            <option value="senior_officer">Senior Officer</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" value="officer">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password" value="1234">
+                </div>
+
+                <button class="login-btn" onclick="handleLogin()">
+                    🔐 Sign In & Enter Dashboard
+                </button>
+
+                <div class="demo-credentials">
+                    <h4>📋 Demo Credentials</h4>
+                    <p><strong>Username:</strong> officer</p>
+                    <p><strong>Password:</strong> 1234</p>
+                    <p><strong>Officer:</strong> John Smith (TRF001)</p>
+                    <p style="margin-top: 8px; font-size: 0.8rem;">
+                        You can modify these details before login.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if already logged in
+        if (localStorage.getItem('rsl_logged_in') === 'true') {
+            window.location.href = 'index.html';
+        }
+
+        function initializeDefaultUser() {
+            const users = JSON.parse(localStorage.getItem('rsl_users') || '[]');
+            if (users.length === 0) {
+                const defaultUser = {
+                    id: 1,
+                    officerName: 'John Smith',
+                    badgeNumber: 'TRF001',
+                    role: 'traffic_officer',
+                    username: 'officer',
+                    password: '1234',
+                    loginCount: 0,
+                    lastLogin: null,
+                    createdAt: new Date().toISOString()
+                };
+                users.push(defaultUser);
+                localStorage.setItem('rsl_users', JSON.stringify(users));
+            }
+        }
+
+        function handleLogin() {
+            const officerName = document.getElementById('officerName').value.trim();
+            const badgeNumber = document.getElementById('badgeNumber').value.trim();
+            const role = document.getElementById('role').value;
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            
+            errorDiv.style.display = 'none';
+
+            if (!officerName || !badgeNumber || !username || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            const users = JSON.parse(localStorage.getItem('rsl_users') || '[]');
+            let user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                user.officerName = officerName;
+                user.badgeNumber = badgeNumber;
+                user.role = role;
+                user.lastLogin = new Date().toISOString();
+                user.loginCount = (user.loginCount || 0) + 1;
+                
+                localStorage.setItem('rsl_users', JSON.stringify(users));
+                localStorage.setItem('rsl_logged_in', 'true');
+                localStorage.setItem('rsl_current_user', JSON.stringify(user));
+                
+                // Show loading animation
+                document.querySelector('.login-btn').innerHTML = '⏳ Logging in...';
+                document.querySelector('.login-btn').disabled = true;
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+                
+            } else {
+                showError('Invalid username or password. Use demo credentials: username: officer, password: 1234');
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDefaultUser();
+            
+            const lastUser = JSON.parse(localStorage.getItem('rsl_current_user') || '{}');
+            if (lastUser.officerName) {
+                document.getElementById('officerName').value = lastUser.officerName;
+            }
+            if (lastUser.badgeNumber) {
+                document.getElementById('badgeNumber').value = lastUser.badgeNumber;
+            }
+            if (lastUser.role) {
+                document.getElementById('role').value = lastUser.role;
+            }
+        });
+    </script>
+</body>
+</html>

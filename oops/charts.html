@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Road Safety Logger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f7f7f7;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: black;
+            padding: 15px 0;
+            text-align: center;
+        }
+        nav a {
+            color: #FFD500;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 8px;
+            border: 2px solid #FFD500;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        nav a:hover, nav a.active {
+            background: #FFD500;
+            color: black;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #000;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h3 {
+            margin-bottom: 20px;
+            color: #000;
+            text-align: center;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+
+        .stats-summary {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .stats-summary h3 {
+            margin-bottom: 15px;
+            color: #000;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: between;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stat-value {
+            margin-left: auto;
+            font-weight: bold;
+            color: #000;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="add.html">Add Violation</a>
+        <a href="view.html">View Data</a>
+        <a href="search.html">Search</a>
+        <a href="charts.html" class="active">Analytics</a>
+        <a href="report.html">Reports</a>
+        <a href="#" onclick="logout()" style="background: #000; color: #FFD500;">Logout</a>
+    </nav>
+
+    <div class="container">
+        <h1>📊 Analytics Dashboard</h1>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>Violations by Type</h3>
+                <canvas id="typeChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Violations by Location</h3>
+                <canvas id="locationChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stats-summary">
+            <h3>📈 Statistics Summary</h3>
+            <div id="statsContent">
+                <!-- Stats will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        if (localStorage.getItem('rsl_logged_in') !== 'true') {
+            alert('Please login first');
+            window.location.href = 'login.html';
+        }
+
+        const KEY = "violations";
+
+        function loadAnalytics() {
+            const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+            
+            if (data.length === 0) {
+                document.getElementById('statsContent').innerHTML = '<p>No data available for analytics</p>';
+                return;
+            }
+
+            // Prepare data for charts
+            const typeCount = {};
+            const locationCount = {};
+            const dateCount = {};
+
+            data.forEach(record => {
+                // Count by type
+                typeCount[record.type] = (typeCount[record.type] || 0) + 1;
+                
+                // Count by location
+                locationCount[record.location] = (locationCount[record.location] || 0) + 1;
+                
+                // Count by date
+                dateCount[record.date] = (dateCount[record.date] || 0) + 1;
+            });
+
+            // Create charts
+            createTypeChart(typeCount);
+            createLocationChart(locationCount);
+            displayStatsSummary(data, typeCount, locationCount);
+        }
+
+        function createTypeChart(typeCount) {
+            const ctx = document.getElementById('typeChart').getContext('2d');
+            const labels = Object.keys(typeCount);
+            const data = Object.values(typeCount);
+            const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: colors.map(color => color.replace('0.8', '1')),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function createLocationChart(locationCount) {
+            const ctx = document.getElementById('locationChart').getContext('2d');
+            
+            // Get top 8 locations
+            const locations = Object.entries(locationCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8);
+            
+            const labels = locations.map(item => item[0]);
+            const data = locations.map(item => item[1]);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Violations',
+                        data: data,
+                        backgroundColor: '#FFD500',
+                        borderColor: '#000',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayStatsSummary(data, typeCount, locationCount) {
+            const total = data.length;
+            const types = Object.keys(typeCount).length;
+            const locations = Object.keys(locationCount).length;
+            
+            // Find most common type and location
+            const mostCommonType = Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0];
+            const mostCommonLocation = Object.entries(locationCount).sort((a, b) => b[1] - a[1])[0];
+
+            document.getElementById('statsContent').innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-label">Total Violations:</span>
+                    <span class="stat-value">${total}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Violation Types:</span>
+                    <span class="stat-value">${types}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Locations Recorded:</span>
+                    <span class="stat-value">${locations}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Most Common Type:</span>
+                    <span class="stat-value">${mostCommonType ? mostCommonType[0] + ' (' + mostCommonType[1] + ')' : 'N/A'}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Most Common Location:</span>
+                    <span class="stat-value">${mostCommonLocation ? mostCommonLocation[0] + ' (' + mostCommonLocation[1] + ')' : 'N/A'}</span>
+                </div>
+            `;
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('rsl_logged_in');
+                localStorage.removeItem('rsl_current_user');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Load analytics when page loads
+        document.addEventListener('DOMContentLoaded', loadAnalytics);
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+com\example\oops\dto\ReportResponse.class
+com\example\oops\service\impl\ReportServiceImpl.class
+com\example\oops\config\WebConfig.class
+com\example\oops\dto\ReportRequest.class
+com\example\oops\advice\GlobalExceptionHandler.class
+com\example\oops\controller\ReportController.class
+com\example\oops\repository\ReportRepository.class
+com\example\oops\entity\Report.class
+com\example\oops\OopsApplication.class
+com\example\oops\service\ReportService.class
