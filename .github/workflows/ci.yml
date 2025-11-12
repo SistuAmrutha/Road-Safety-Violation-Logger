@@ -27,6 +27,19 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2-
 
+      - name: Start MySQL service for tests
+        run: |
+          # Start only the MySQL service from the backend compose file so Maven integration tests can connect
+          docker compose -f backend/docker-compose.yml up -d mysql
+          # Wait for MySQL to accept connections
+          for i in $(seq 1 60); do
+            if docker exec oops-mysql mysqladmin ping -h localhost -uroot -pchangeme --silent >/dev/null 2>&1; then
+              echo "MySQL is ready"; break
+            fi
+            echo "Waiting for MySQL... ($i/60)"
+            sleep 2
+          done
+
       - name: Run Maven tests
         run: mvn -B -V test
 
