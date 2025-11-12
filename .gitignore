@@ -1,0 +1,35 @@
+# IDEs and editors
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Java / Maven
+target/
+build/
+*.class
+*.jar
+*.war
+
+# Maven wrapper downloaded artifacts backup
+/.mvn/wrapper/maven-wrapper.jar.bak
+
+# Backend build artifacts and temp
+/backend/target/
+/backend/temp/
+
+# Environment files
+.env
+
+# Node
+node_modules/
+
+# Temporary files
+*.tmp
+*.swp
